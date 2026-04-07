@@ -1,0 +1,18 @@
+{
+  "name": "himd",
+  "owner": {
+    "name": "tpiperatgod"
+  },
+  "metadata": {
+    "description": "himd (hi.md) — a voice-first /hi companion for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "himd",
+      "source": "./plugins/himd",
+      "description": "Voice-first /hi companion — captures speech, analyzes mood, and replies warmly",
+      "keywords": ["voice", "companion", "tts", "speech"],
+      "category": "productivity"
+    }
+  ]
+}

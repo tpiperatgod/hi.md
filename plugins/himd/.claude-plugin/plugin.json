@@ -7,5 +7,6 @@
   },
   "homepage": "https://github.com/tpiperatgod/himd",
   "repository": "https://github.com/tpiperatgod/himd",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": ["voice", "companion", "tts", "speech"]
 }
