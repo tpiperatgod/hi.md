@@ -4,7 +4,7 @@ const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 const { z } = require("zod");
 const { analyzeAudio, buildAudioTurn } = require("./analyze.js");
-const { synthesize, playAudio, markSpeechTurn, readProfile, writeProfile, VALID_VOICES } = require("./tts.js");
+const { synthesize, playAudio, markSpeechTurn, readProfile, writeProfile } = require("./tts.js");
 const { captureOnce, getControlDir } = require("./capture.js");
 const qwenOmni = require("./providers/qwen-omni-provider.js");
 
@@ -205,7 +205,7 @@ server.tool(
   "Convert text to speech using GLM-TTS and play it. Use this after generating a reply to speak it aloud.",
   {
     text: z.string().describe("Text to speak (required, max 1024 chars)"),
-    voice: z.string().optional().describe(`Voice to use. Options: ${VALID_VOICES.join(", ")}. Defaults to profile or tongtong.`),
+    voice: z.string().optional().describe("Optional Qwen TTS voice name."),
     speed: z.number().optional().describe("Speech speed, range [0.5, 2.0]. Defaults to profile or 1.0."),
   },
   async ({ text, voice, speed }) => {
@@ -239,7 +239,7 @@ server.tool(
   "speech_set_profile",
   "Set or update the default voice profile for TTS output.",
   {
-    voice: z.string().optional().describe(`Voice name: ${VALID_VOICES.join(", ")}`),
+    voice: z.string().optional().describe("Optional Qwen TTS voice name."),
     speed: z.number().optional().describe("Speech speed [0.5, 2.0]"),
   },
   async ({ voice, speed }) => {

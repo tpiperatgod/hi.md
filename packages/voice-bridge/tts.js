@@ -2,13 +2,37 @@ const fs = require("fs");
 const { execSync } = require("child_process");
 const { assertCommandAvailable } = require("./system-deps.js");
 
-const ZHIPU_API_KEY = process.env.ZHIPU_API_KEY;
-const TTS_API_URL = "https://open.bigmodel.cn/api/paas/v4/audio/speech";
 const PROFILE_PATH = "/tmp/himd-voice-profile.json";
 const MARKER_PATH = "/tmp/himd-last-speech-turn";
 
-const VALID_VOICES = ["tongtong", "chuichui", "xiaochen", "jam", "kazi", "douji", "luodo"];
-const DEFAULT_PROFILE = { voice: "tongtong", speed: 1.0 };
+const DEFAULT_PROFILE = {
+  voice: "Cherry",
+  instructions: "",
+  optimize_instructions: false,
+};
+
+function getTtsModel() {
+  return process.env.TTS_MODEL || "qwen3-tts-instruct-flash";
+}
+
+function buildTtsApiUrl() {
+  const base = process.env.DASHSCOPE_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1";
+  const url = new URL(base);
+  return `${url.origin}/api/v1/services/aigc/multimodal-generation/generation`;
+}
+
+function buildSynthesisPayload(text, profile) {
+  return {
+    model: getTtsModel(),
+    input: {
+      text,
+      voice: profile.voice || "Cherry",
+      instructions: profile.instructions,
+      optimize_instructions: profile.optimize_instructions ?? false,
+      language_type: "Auto",
+    },
+  };
+}
 
 function readProfile() {
   try {
@@ -22,16 +46,13 @@ function readProfile() {
 function writeProfile(updates) {
   const current = readProfile();
   if (updates.voice !== undefined) {
-    if (!VALID_VOICES.includes(updates.voice)) {
-      throw new Error(`Invalid voice: ${updates.voice}. Valid: ${VALID_VOICES.join(", ")}`);
-    }
     current.voice = updates.voice;
   }
-  if (updates.speed !== undefined) {
-    if (updates.speed < 0.5 || updates.speed > 2.0) {
-      throw new Error(`Speed must be between 0.5 and 2.0, got ${updates.speed}`);
-    }
-    current.speed = updates.speed;
+  if (updates.instructions !== undefined) {
+    current.instructions = updates.instructions;
+  }
+  if (updates.optimize_instructions !== undefined) {
+    current.optimize_instructions = updates.optimize_instructions;
   }
   current.updated_at = new Date().toISOString();
   fs.writeFileSync(PROFILE_PATH, JSON.stringify(current, null, 2));
@@ -39,33 +60,33 @@ function writeProfile(updates) {
 }
 
 async function synthesize(text, options = {}) {
-  if (!ZHIPU_API_KEY) {
-    throw new Error("ZHIPU_API_KEY environment variable is not set");
+  const apiKey = process.env.DASHSCOPE_API_KEY;
+  if (!apiKey) {
+    throw new Error("DASHSCOPE_API_KEY environment variable is not set");
   }
   if (!text || text.trim().length === 0) {
     throw new Error("Text is required for TTS");
   }
-  if (text.length > 1024) {
-    throw new Error(`Text too long: ${text.length} chars (max 1024)`);
+  if (text.length > 600) {
+    throw new Error(`Text too long: ${text.length} chars (max 600)`);
   }
 
   const profile = readProfile();
-  const voice = options.voice || profile.voice;
-  const speed = options.speed !== undefined ? options.speed : profile.speed;
+  const effective = {
+    voice: options.voice || profile.voice,
+    instructions: options.instructions !== undefined ? options.instructions : profile.instructions,
+    optimize_instructions: options.optimize_instructions !== undefined ? options.optimize_instructions : profile.optimize_instructions,
+  };
 
-  const response = await fetch(TTS_API_URL, {
+  const payload = buildSynthesisPayload(text, effective);
+
+  const response = await fetch(buildTtsApiUrl(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${ZHIPU_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: "glm-tts",
-      input: text,
-      voice,
-      response_format: "wav",
-      speed,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -73,13 +94,33 @@ async function synthesize(text, options = {}) {
     throw new Error(`TTS API error (${response.status}): ${errBody}`);
   }
 
+  const result = await response.json();
+
+  const audioUrl = result?.output?.audio?.url;
+  if (!audioUrl) {
+    throw new Error("TTS API did not return an audio URL");
+  }
+
+  // Download the audio file
+  const audioResponse = await fetch(audioUrl);
+  if (!audioResponse.ok) {
+    throw new Error(`Failed to download audio (${audioResponse.status})`);
+  }
+
   const timestamp = Date.now();
   const audioFile = buildAudioFilePath(timestamp);
 
-  const arrayBuffer = await response.arrayBuffer();
+  const arrayBuffer = await audioResponse.arrayBuffer();
   fs.writeFileSync(audioFile, Buffer.from(arrayBuffer));
 
-  return { audioFile, voice, speed, textLength: text.length };
+  return {
+    audioFile,
+    model: getTtsModel(),
+    voice: effective.voice,
+    instructions: effective.instructions || null,
+    optimizeInstructions: effective.optimize_instructions ?? false,
+    textLength: text.length,
+  };
 }
 
 function playAudio(audioFile) {
@@ -116,8 +157,9 @@ module.exports = {
   checkRecentSpeech,
   readProfile,
   writeProfile,
-  VALID_VOICES,
-  TTS_API_URL,
+  getTtsModel,
+  buildTtsApiUrl,
+  buildSynthesisPayload,
   PROFILE_PATH,
   MARKER_PATH,
   buildAudioFilePath,
