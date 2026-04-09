@@ -6,4 +6,7 @@ docs/superpowers/
 .voice-bridge/
 .playwright-mcp/
 .serena/
+.worktrees/
 CLAUDE.md
+target/
+dist/
