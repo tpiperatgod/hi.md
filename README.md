@@ -28,6 +28,8 @@ Instead of `speech → text → response`, hi.md moves closer to `speech → und
 
 If anything goes wrong, run `/himd:doctor` for guided diagnosis.
 
+`/hi` also supports project-local persona customization. Copy a preset from `plugins/himd/personas/zh/presets/` or `plugins/himd/personas/en/presets/` to `.himd/persona.md`, or start from the matching template under `plugins/himd/personas/zh/` or `plugins/himd/personas/en/`. See `plugins/himd/personas/README.md` for the layout.
+
 ## Documentation
 
 | Topic | Link |

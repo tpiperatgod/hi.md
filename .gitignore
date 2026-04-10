@@ -4,6 +4,7 @@
 node_modules/
 docs/superpowers/
 .voice-bridge/
+.himd/persona.md
 .playwright-mcp/
 .serena/
 .worktrees/

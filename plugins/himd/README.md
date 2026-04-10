@@ -131,6 +131,73 @@ Or inside Claude Code:
 3. Speak when prompted
 4. Listen to the reply
 
+## Persona customization
+
+`/hi` supports one optional project-local persona file:
+
+- active file: `.himd/persona.md`
+- if the file exists, `/hi` uses it for reply style and TTS defaults
+- if the file does not exist, `/hi` falls back to the built-in default caring companion
+
+### Use a preset
+
+Choose a preset from `plugins/himd/personas/zh/presets/` (Chinese-authored) or `plugins/himd/personas/en/presets/` (English-authored), then copy it into `.himd/persona.md`. The filenames are mirrored across both directories.
+
+**macOS/Linux:**
+
+```bash
+mkdir -p .himd
+cp plugins/himd/personas/zh/presets/gentle.md .himd/persona.md
+# or
+cp plugins/himd/personas/en/presets/gentle.md .himd/persona.md
+```
+
+**Windows (PowerShell):**
+
+```powershell
+New-Item -ItemType Directory -Force .himd | Out-Null
+Copy-Item plugins/himd/personas/zh/presets/gentle.md .himd/persona.md
+# or
+Copy-Item plugins/himd/personas/en/presets/gentle.md .himd/persona.md
+```
+
+Available presets in both `zh/` and `en/`:
+
+- `gentle.md` — gentle, restrained, low-stimulation
+- `plain.md` — plain, natural, no cutesiness
+- `sharp.md` — direct, clear-headed, lightly sharp
+- `tsundere.md` — prickly on the surface, caring underneath
+- `english-buddy.md` — bilingual companion for natural everyday English
+- `english-coach.md` — bilingual coach that pushes spoken English practice
+
+### Create your own
+
+Start from either template:
+
+**macOS/Linux:**
+
+```bash
+mkdir -p .himd
+cp plugins/himd/personas/zh/TEMPLATE.md .himd/persona.md
+# or
+cp plugins/himd/personas/en/TEMPLATE.md .himd/persona.md
+```
+
+**Windows (PowerShell):**
+
+```powershell
+New-Item -ItemType Directory -Force .himd | Out-Null
+Copy-Item plugins/himd/personas/zh/TEMPLATE.md .himd/persona.md
+# or
+Copy-Item plugins/himd/personas/en/TEMPLATE.md .himd/persona.md
+```
+
+Then edit `.himd/persona.md` directly.
+
+There is no separate persona command and no layered override chain. The current persona is always exactly the contents of `.himd/persona.md`.
+
+For the full directory layout, see `plugins/himd/personas/README.md`.
+
 ## Plugin commands
 
 | Command | Description |
